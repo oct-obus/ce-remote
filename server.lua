@@ -51,7 +51,6 @@ print("CE Remote Server starting on \\\\.\\pipe\\" .. PIPE_NAME)
 
 createThread(function()
   while not _G._ceRemoteStop do
-    -- Create a fresh pipe for each client session
     local pipe = createPipe(PIPE_NAME, 65536, 65536)
     if not pipe or not pipe.valid then
       print("[ceremote] ERROR: Failed to create pipe")
@@ -67,14 +66,36 @@ createThread(function()
       print("[ceremote] Client connected")
 
       while pipe.Connected do
+        -- Protocol: byte(mode) + dword(len) + string(code)
+        -- mode: 0 = synchronize (main thread, safe for GUI), 1 = async (background thread)
+        local mode = pipe.readByte()
+        if not mode then break end
+
         local len = pipe.readDword()
         if not len then break end
 
         local code = pipe.readString(len)
         if not code then break end
 
-        print("[ceremote] Exec: " .. code:sub(1, 80) .. (code:len() > 80 and "..." or ""))
-        local output = captureExec(code)
+        local modeStr = mode == 1 and "async" or "sync"
+        print(string.format("[ceremote:%s] Exec: %s%s", modeStr,
+          code:sub(1, 70), code:len() > 70 and "..." or ""))
+
+        local output
+
+        if mode == 1 then
+          -- Async: run directly in this thread (background)
+          output = captureExec(code)
+        else
+          -- Sync: run on main thread via synchronize()
+          local done = false
+          synchronize(function()
+            output = captureExec(code)
+            done = true
+          end)
+          -- Wait for main thread to execute it
+          while not done do sleep(10) end
+        end
 
         pipe.writeDword(#output)
         pipe.writeString(output)

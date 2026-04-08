@@ -9,6 +9,7 @@ SHUTDOWN_CMD = "_G._ceRemoteStop = true"
 try:
     pipe = open(PIPE_PATH, "r+b", buffering=0)
     encoded = SHUTDOWN_CMD.encode("utf-8")
+    pipe.write(struct.pack("<B", 1))  # async mode
     pipe.write(struct.pack("<I", len(encoded)))
     pipe.write(encoded)
     pipe.flush()
