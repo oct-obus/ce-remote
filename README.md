@@ -51,6 +51,27 @@ Re-running `server.lua` in CE also auto-stops any previous instance.
 - The server executes the code via `loadstring()`, captures `print()` output and return values, then sends the result back
 - After a client disconnects, the pipe is recreated for the next connection
 
+## Testing
+
+Run the included test script to verify everything works:
+
+```bash
+python client.py -f test.lua
+```
+
+Expected output:
+```
+=== CE Remote Test ===
+[1] Lua eval:  2+2 = 4
+[2] CE version: 7.5
+[3] Attached PID: 12345
+    Process: myprocess.exe
+[4] Table entries: 42
+[5] First dword at base: 0x5A4D
+[6] 100k iterations: 12ms
+=== All tests passed ===
+```
+
 ## Requirements
 
 - Cheat Engine 7.x+
